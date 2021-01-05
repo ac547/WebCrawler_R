@@ -1,0 +1,123 @@
+---
+title: "Oxford University Press DNA Research Journal Scrapper"
+output: html_notebook
+---
+
+
+# The Site 
+
+
+```{r}
+Crawler <-  function(year=Null){
+  library('rvest')
+  Elegant <- data.frame("title"=c(1),
+                        "authors"=c(1),
+                        "aff"=c(1),
+                        "Email"=c(1),
+                        "date"=c(1),
+                        "abstract"=c(1),
+                        "kws"=c(1))
+                        #"text"=c(1)
+                        #)
+  digit <- year-1993
+  url <- 'https://academic.oup.com/dnaresearch/issue/'
+  
+  for (i in seq(digit,25)){
+    
+    #For every year do.....
+    if (i == 2006-1993){
+      next} # Skip year 2006, corrupted data
+    
+    
+
+    for (j in seq(1,6)){
+      
+      #For every issue do.....
+      
+      issue <- paste0(url,i,'/',j)
+      webpage <- read_html(issue)
+  
+      html_catalog <- html_nodes(webpage, '.ww-citation-primary')
+      catalog <- html_text(html_catalog)
+  
+      art_url <- substring(catalog, regexpr('https:',catalog))
+  
+  
+      for (k in seq(1,5)){
+        
+        #For every article do......
+        
+        partial <- c()
+        
+        art_page <- read_html(art_url[k])
+  
+        #______________Title______________
+        html_title <- html_nodes(art_page,'.article-title-main')
+        title <- html_title %>% html_text() %>% trimws() 
+  
+        #_____________Authors_____________
+        html_authors <- html_nodes(art_page, '.info-card-name')
+        authors <- html_authors %>% html_text() %>% trimws()
+        authors <- paste(authors, collapse = ', ')
+        partial <- cbind(title,authors)
+  
+        #__________Affiliation____________
+        html_aff <- html_nodes(art_page, '.aff')
+        aff <- html_aff %>% html_text() %>% trimws()
+        aff <- paste(aff, collapse = ', ')  
+        partial <- cbind(partial,aff)
+  
+        #______Correspondence Email_______
+        html_corrE <- html_nodes(art_page,'.al-authors-list')
+        corrE <- html_corrE %>% html_text() %>% trimws()
+        Email <- substring(corrE,regexpr('Email:',corrE)+6,
+                     regexpr('@',corrE)+100)
+        Email <- substring(Email,1,regexpr('\r',Email)-1)
+        partial <- cbind(partial,Email)
+  
+        #__________Publish Date___________
+        html_date <- html_nodes(art_page,'.citation-date')
+        date <- html_date %>% html_text() %>% trimws()
+        partial <- cbind(partial,date)
+  
+        #____________Abstract_____________
+        html_abs <- html_nodes(art_page, 'p')
+        abs <- html_abs %>% html_text() %>% trimws()
+        abstract <- abs[2]
+        partial <- cbind(partial,abstract)
+  
+        #_____________Keywords___________
+        html_kws <- html_nodes(art_page, '.kwd-group')
+        kws <- html_kws %>% html_text() %>% trimws()
+        partial <- cbind(partial, kws)
+  
+        #____________Text________________
+        #first <- 'https://academic.oup.com'
+        #last <- html_nodes(art_page, '.al-link.pdf.article-pdfLink')
+        #last <- html_attr(last,'href')
+        #file_url <- paste0(first,last)
+        #download.file(file_url,'C:/Users/Castellano/Documents/Spring2020/CS636/Project_PDF/TEMP.pdf',method = "auto")
+        #library('pdftools')
+        #text <- pdf_text('C:/Users/Castellano/Documents/Spring2020/CS636/Project_PDF/TEMP.pdf')
+        #text <- paste(text, collapse=' ')
+        #partial <- cbind(partial, text)
+  
+  
+        Elegant <- rbind(Elegant,partial)
+        
+      } # For every article End
+      
+    } # For every Issue End
+    
+  } # For every year End
+    
+  Elegant <- Elegant[-1,]
+  return(Elegant)
+  
+}
+
+
+```
+
+
+
